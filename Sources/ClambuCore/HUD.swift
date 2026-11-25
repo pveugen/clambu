@@ -19,6 +19,10 @@ public enum HUD {
              url: s.localURL, tailnetURL: s.tailnetURL, frameAt: s.frameAt)
     }
 
+    public static func preview(_ s: Snapshot, width: Int = 64) -> String {
+        line(file(s), style: .ansi, width: width) ?? ""
+    }
+
     static func write(_ s: Snapshot) {
         try? FileManager.default.createDirectory(atPath: Paths.cache, withIntermediateDirectories: true)
         guard let d = try? JSON.encoder(pretty: false).encode(file(s)) else { return }

@@ -5,7 +5,7 @@ import Foundation
 
 struct RenderMock: AsyncParsableCommand {
     static let configuration = CommandConfiguration(commandName: "render-mock", shouldDisplay: false)
-    @Argument(help: "panel or follow") var view = "follow"
+    @Argument(help: "panel, follow or hud") var view = "follow"
     @Option var scene = "printing"
     @Option var width = 120
     @Flag var noColor = false
@@ -14,6 +14,7 @@ struct RenderMock: AsyncParsableCommand {
         let text: String = await MainActor.run {
             switch view {
             case "panel": Render.panel(sc, width: width, color: !noColor)
+            case "hud": HUD.preview(Render.snapshot(sc, now: Date()), width: width)
             default: Render.follow(sc, width: width, color: !noColor)
             }
         }

@@ -2,6 +2,8 @@
 
 Slice, print and watch a Bambu Lab 3D printer from the terminal on macOS, with no Bambu Studio window. Works with the A1, A1 mini, P1S, X1, H2D, P2S and every other model Bambu Studio has profiles for.
 
+![clambu following a print: a log of what happened, with a panel showing progress, temperatures and keys](docs/follow.png)
+
 ## Install
 
 You need a Mac with macOS 15 or later, Xcode with Swift 6.4 or later, and [Bambu Studio](https://bambulab.com/en/download/studio) in /Applications. clambu slices with Bambu Studio's own engine and profiles.
@@ -39,6 +41,8 @@ Give the printer a fixed IP address in your router, so clambu finds it after a r
 ```sh
 clambu setup
 ```
+
+![clambu setup: a printer drawn in ASCII, then the printer screen settings to switch on](docs/setup.png)
 
 In a terminal, setup walks you through these steps with a picture of the printer's screen. It asks for the IP address, the serial number and the access code (typed hidden). It recognises the model from the serial number, connects to the printer, reads the nozzle size and the loaded spool, and asks for your default material and build plate. It saves everything to `~/.config/bambu/<name>.env`, readable only by you.
 
@@ -141,6 +145,8 @@ clambu sends a macOS notification when the print changes state or the printer re
 While clambu follows a print, it serves a read-only page with the live camera frame and the progress, on 127.0.0.1 and on this Mac's Tailscale address. Open `http://<this Mac's name>:8765/` on your phone. `--local` keeps the page on this Mac, and `--port` picks another port.
 
 ## Status line for tmux and Claude Code
+
+![The status line while printing, heating up, paused and finished](docs/statusline.png)
 
 `clambu hud` prints the print in one line, and nothing when nothing prints. Name the Mac that prints with `--from`, and every machine shows its print over Tailscale. For example, with a Mac called `my-mac`, in `~/.tmux.conf`:
 
