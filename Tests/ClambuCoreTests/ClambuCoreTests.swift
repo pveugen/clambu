@@ -57,6 +57,47 @@ final class CheckTests: XCTestCase {
     }
 }
 
+final class BaseTests: XCTestCase {
+    func layers(_ lengths: [Double], label: Int? = nil, height: Double = 0.08) -> String {
+        var out = ["; nozzle_diameter = 0.4"]
+        for (i, length) in lengths.enumerated() {
+            out += ["; CHANGE_LAYER", "; Z_HEIGHT: \(0.2 + Double(i) * height)", "; LAYER_HEIGHT: \(i == 0 ? 0.2 : height)"]
+            if let label { out.append("; start printing object, unique label id: \(label)") }
+            out += ["G0 X0 Y0", "G1 X\(length) Y0 E1", "G1 X\(length) Y0 E-0.8"]
+            if label != nil { out.append("; stop printing object, unique label id: \(label!)") }
+        }
+        return out.joined(separator: "\n")
+    }
+
+    func testFloatingBaseFails() {
+        let problems = floatingBases(layers([10, 10, 10, 10, 10, 10, 3000, 3000]))
+        XCTAssertEqual(problems.count, 1)
+        XCTAssertTrue(problems[0].contains("the model prints its base in the air"))
+        XCTAssertTrue(problems[0].contains("4.0mm² on the plate"))
+    }
+
+    func testGrowingBasePasses() {
+        let cone = (0..<25).map { 20 * pow(1.15, Double($0)) }
+        XCTAssertEqual(floatingBases(layers(cone)), [])
+        XCTAssertEqual(floatingBases(layers([2500, 2500, 2510, 2520])), [])
+    }
+
+    func testSmallJumpPasses() {
+        XCTAssertEqual(floatingBases(layers([5, 5, 60])), [])
+    }
+
+    func testNamesTheObject() {
+        let text = layers([3000, 3000], label: 101) + "\n" + layers([10, 10, 10, 3000], label: 102)
+        let problems = floatingBases(text, names: [101: "lid", 102: "pinned box"])
+        XCTAssertEqual(problems.count, 1)
+        XCTAssertTrue(problems[0].hasPrefix("pinned box prints its base in the air"))
+    }
+
+    func testOnlyLooksAtTheBottom() {
+        XCTAssertEqual(floatingBases(layers(Array(repeating: 10, count: 40) + [3000])), [])
+    }
+}
+
 final class MachineTests: XCTestCase {
     func testSerialGuess() {
         XCTAssertEqual(Machine.guess(serial: "0309DA000000000"), "A1 mini")

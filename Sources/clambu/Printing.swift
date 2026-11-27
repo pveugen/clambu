@@ -33,8 +33,7 @@ func sendFile(_ file: String, plate: Int, _ o: SendOptions, _ cfg: PrinterConfig
     Output.context["file"] = path
 
     say("1. File check")
-    let gcode = try readPlateGCode(path, plate: plate)
-    let info = try fileCheck(gcode)
+    let (gcode, info) = try fileCheck(path, plate: plate)
     if info.printer != cfg.machine.printerModel {
         throw Stop("the file is sliced for the \(info.printer), but \(cfg.name) is a \(cfg.machine.printerModel)")
     }
@@ -73,12 +72,12 @@ func sendFile(_ file: String, plate: Int, _ o: SendOptions, _ cfg: PrinterConfig
     }
 }
 
-func fileCheck(_ gcode: String) throws -> CheckInfo {
-    let (info, problems) = checkGCode(gcode)
-    printCheck(info, problems)
-    Output.context["check"] = ["info": JSON.object(info), "problems": problems]
-    if !problems.isEmpty { throw Stop("the file failed its self-check; slice it again") }
-    return info
+func fileCheck(_ path: String, plate: Int) throws -> (String, CheckInfo) {
+    let c = try checkFile(path, plate: plate)
+    printCheck(c.info, c.problems, warnings: c.warnings)
+    Output.context["check"] = ["info": JSON.object(c.info), "problems": c.problems, "warnings": c.warnings]
+    if !c.problems.isEmpty { throw Stop("the file failed its self-check; fix it and slice it again") }
+    return (c.gcode, c.info)
 }
 
 func printerCheck(_ printer: Printer, _ info: CheckInfo, slot: Int?) async throws {

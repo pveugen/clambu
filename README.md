@@ -116,9 +116,11 @@ clambu materials                            # the material presets for your prin
 
 | Step | Refuses when |
 |------|--------------|
-| slice | the G-code skips the printer's own start routine, the layer 1 nozzle temperature differs from the material's or sits outside its safe range, the bed temperature doesn't match the plate, or Bambu Studio warns about the model |
+| slice | the G-code skips the printer's own start routine, the layer 1 nozzle temperature differs from the material's or sits outside its safe range, the bed temperature doesn't match the plate, a part's base prints in the air, or Bambu Studio warns about the model |
 | send | the file fails those checks, it is sliced for another printer model, the printer is busy, the nozzle size differs, the loaded spool isn't the file's material, or the camera doesn't see a clear plate |
 | send | you don't answer y, unless you pass `--yes` |
+
+`check`, `slice` and `send` look at the lowest 2mm of every part. When a layer suddenly lays down far more than anything below it, the part's base is printing in the air, usually because a thin bit pokes out of the bottom of the model and the slicer set the part down on it. They also warn when a part touches the plate with less than 5% of its footprint.
 
 After the start, `send` follows the heat-up, reports the layer 1 temperatures and saves a photo of layer 1 to `~/Pictures/clambu`.
 

@@ -104,7 +104,7 @@ func temps(_ lines: [Substring], _ commands: [String]) -> [Int] {
     }
 }
 
-public func checkGCode(_ text: String) -> (CheckInfo, [String]) {
+public func checkGCode(_ text: String, names: [Int: String] = [:]) -> (CheckInfo, [String]) {
     guard let change = text.range(of: "; CHANGE_LAYER") else { return (CheckInfo(), ["no layers found in the G-code"]) }
     var s: [String: String] = [:]
     var time: String?, grams: String?, layerCount: Int?
@@ -161,6 +161,7 @@ public func checkGCode(_ text: String) -> (CheckInfo, [String]) {
         problems.append("unknown plate type '\(plate)'")
     }
     if ftype.isEmpty { problems.append("filament type missing from the G-code") }
+    problems += floatingBases(text, names: names)
     return (info, problems)
 }
 
@@ -169,11 +170,25 @@ func hasOwnStart(_ text: String, _ setting: String?) -> Bool {
     return text.split(separator: "\n").contains { $0.trimmingCharacters(in: .whitespaces) == mark.trimmingCharacters(in: .whitespaces) }
 }
 
-public func printCheck(_ i: CheckInfo, _ problems: [String]) {
+public struct FileCheck {
+    public var gcode: String
+    public var info: CheckInfo
+    public var problems: [String]
+    public var warnings: [String]
+}
+
+public func checkFile(_ path: String, plate: Int = 1) throws -> FileCheck {
+    let gcode = try readPlateGCode(path, plate: plate)
+    let (info, problems) = checkGCode(gcode, names: objectNames(path))
+    return FileCheck(gcode: gcode, info: info, problems: problems, warnings: footprintHints(path, plate: plate))
+}
+
+public func printCheck(_ i: CheckInfo, _ problems: [String], warnings: [String] = []) {
     say("  \(i.printer): \(i.profile) (\(i.filament)), \(i.plate)")
     say("  layer 1: nozzle \(i.nozzleFirstLayer.map { "\($0)" } ?? "?") C, bed \(i.bedFirstLayer.map { "\($0)" } ?? "?") C, "
         + "\(i.nozzleDiameter)mm nozzle, \(i.layerHeight)mm layers" + (i.layers.map { ", \($0) layers" } ?? ""))
     say("  \(i.time), \(i.grams)g")
+    for w in warnings { say("  warn: \(w)") }
     for p in problems { say("  FAIL: \(p)") }
     if problems.isEmpty { say("  self-check passed") }
 }

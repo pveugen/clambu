@@ -46,9 +46,10 @@ struct Check: AsyncParsableCommand {
     @Option var plate = 1
     @OptionGroup var out: JSONFlag
     func run() async throws {
-        let (info, problems) = checkGCode(try readPlateGCode(file, plate: plate))
-        if !out.json { printCheck(info, problems) }
-        try Output.done(["file": file, "plate": plate, "info": JSON.object(info), "problems": problems], ok: problems.isEmpty)
+        let c = try checkFile(file, plate: plate)
+        if !out.json { printCheck(c.info, c.problems, warnings: c.warnings) }
+        try Output.done(["file": file, "plate": plate, "info": JSON.object(c.info), "problems": c.problems, "warnings": c.warnings],
+                        ok: c.problems.isEmpty)
     }
 }
 
@@ -69,11 +70,11 @@ extension SliceOptions {
         let warnings = try ClambuCore.slice(stl, material: m, machine: machine, out: out,
                                             SliceSettings(process: process, walls: walls, infill: infill, supports: supports, plate: bed))
         say("Sliced  \(out)")
-        let (info, problems) = checkGCode(try readPlateGCode(out))
-        let all = problems + warnings.map { "slicer: \($0)" }
-        printCheck(info, all)
+        let c = try checkFile(out)
+        let all = c.problems + warnings.map { "slicer: \($0)" }
+        printCheck(c.info, all, warnings: c.warnings)
         Output.context["output"] = out
-        Output.context["check"] = ["info": JSON.object(info), "problems": all]
+        Output.context["check"] = ["info": JSON.object(c.info), "problems": all, "warnings": c.warnings]
         Output.context["warnings"] = warnings
         if !all.isEmpty { throw Stop("this file is not safe to print; nothing was sent") }
         return out
